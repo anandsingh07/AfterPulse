@@ -40,5 +40,25 @@ contract PulseTrackcore is ReentrancyGuard , Ownable , Pausable {
     uint256 public aiCooldown = 1 hours;
     uint256 public zkpValidityPeriod = 30 days;
 
+    event Locked(address indexed user, uint256 amount, uint256 period);
+    event Unlocked(address indexed user, uint256 amount);
+    event ActivityVerified(address indexed user, uint256 timestamp);
+    event InactivityTransfer(address indexed user, address indexed nominee, uint256 amount);
+    event HederaLog(address indexed user, string logType, uint256 timestamp);
+    event Ping(address indexed user, uint256 timestamp);
     
+     modifier onlyAI() {
+        require(msg.sender == aiMonitor, "Not AI monitor");
+        _;
+    }
+
+    constructor(address _pyusd) Ownable(msg.sender) {
+    PYUSD = _pyusd;
+    
+    }
+
+    function setMonitors(address _ai , address _hedera) external onlyowner {};
+    function pauseContract()external onlyOwner{};
+    function unpauseContract()external onlyOwner{};
+
 }
