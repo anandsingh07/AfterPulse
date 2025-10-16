@@ -57,8 +57,50 @@ contract PulseTrackcore is ReentrancyGuard , Ownable , Pausable {
     
     }
 
-    function setMonitors(address _ai , address _hedera) external onlyowner {};
-    function pauseContract()external onlyOwner{};
-    function unpauseContract()external onlyOwner{};
+    function setMonitors(address _ai, address _hedera) external onlyOwner {
+        aiMonitor = _ai;
+        hederaLogger = _hedera;
+    }
+
+   
+    function pauseContract() external onlyOwner { _pause(); }
+    function unpauseContract() external onlyOwner { _unpause(); }
+
+    function _lock(
+        uint256 _amount,
+        uint256 _lockPeriod,
+        Nominee[] calldata _nominees,
+        uint256 _graceDays,
+        uint256 _inactivityPeriod,
+        address _token
+    ) internal {
+        LockInfo storage info = userLocks[msg.sender];
+        require(!info.active, "Already locked");
+        require(_lockPeriod >= 1 days, "Lock too short");
+        require(_nominees.length > 0, "No nominees");
+
+        uint256 totalShare;
+        delete info.nominees;
+
+        for (uint256 i = 0; i < _nominees.length; i++) {
+            require(_nominees[i].wallet != address(0), "Bad nominee");
+            totalShare += _nominees[i].share;
+            info.nominees.push(_nominees[i]);
+        }
+        require(totalShare == 100, "Share != 100");
+
+        info.amount = _amount;
+        info.startTime = block.timestamp;
+        info.lockPeriod = _lockPeriod;
+        info.gracePeriod = _graceDays * 1 days;
+        info.inactivityPeriod = _inactivityPeriod;
+        info.lastActivity = block.timestamp;
+        info.token = _token;
+        info.active = true;
+
+        emit Locked(msg.sender, _amount, _lockPeriod);
+        emit HederaLog(msg.sender, _token == address(0) ? "LOCK_CREATED_ETH" : "LOCK_CREATED_PYUSD", block.timestamp);
+    }
+
 
 }
