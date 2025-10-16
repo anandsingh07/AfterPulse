@@ -28,6 +28,17 @@ contract PulseTrackcore is ReentrancyGuard , Ownable , Pausable {
         address token; 
         uint256 inactivityPeriod;
     }
+    mapping(address => LockInfo) public userLocks;
+    mapping(address => uint256[]) public activityLog;
+    mapping(address => uint256) public lastAIAction;
+    mapping(address => uint256) public lastZKPVerified;
 
-   
+    address public aiMonitor;
+    address public hederaLogger;
+    address public immutable PYUSD;
+
+    uint256 public aiCooldown = 1 hours;
+    uint256 public zkpValidityPeriod = 30 days;
+
+    
 }
