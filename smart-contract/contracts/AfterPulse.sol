@@ -101,6 +101,31 @@ contract PulseTrackcore is ReentrancyGuard , Ownable , Pausable {
         emit Locked(msg.sender, _amount, _lockPeriod);
         emit HederaLog(msg.sender, _token == address(0) ? "LOCK_CREATED_ETH" : "LOCK_CREATED_PYUSD", block.timestamp);
     }
+    
+   function lockETH(
+        uint256 _lockPeriod,
+        Nominee[] calldata _nominees,
+        uint256 _graceDays,
+        uint256 _inactivityPeriod
+    ) external payable nonReentrant whenNotPaused {
+        require(msg.value > 0, "No ETH sent");
+        require(_inactivityPeriod >= 1 days, "Inactivity too short");
 
+        _lock(msg.value, _lockPeriod, _nominees, _graceDays, _inactivityPeriod, address(0));
+    }
+
+      function lockPYUSD(
+        uint256 _amount,
+        uint256 _lockPeriod,
+        Nominee[] calldata _nominees,
+        uint256 _graceDays,
+        uint256 _inactivityPeriod
+    ) external nonReentrant whenNotPaused {
+        require(_amount > 0, "Zero amount");
+        require(_inactivityPeriod >= 1 days, "Inactivity too short");
+
+        IERC20(PYUSD).safeTransferFrom(msg.sender, address(this), _amount);
+        _lock(_amount, _lockPeriod, _nominees, _graceDays, _inactivityPeriod, PYUSD);
+    } 
 
 }
