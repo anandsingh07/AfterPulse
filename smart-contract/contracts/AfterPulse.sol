@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-
     struct Nominee { address wallet; uint256 share; }
 
     struct LockInfo {
@@ -22,54 +21,43 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
         Nominee[] nominees;
         uint256 gracePeriod;
         uint256 lastActivity;
-        address token; 
+        address token;
         uint256 inactivityPeriod;
     }
 
-   
     mapping(address => LockInfo) public userLocks;
     mapping(address => uint256[]) public activityLog;
     mapping(address => uint256) public lastAIAction;
     mapping(address => uint256) public lastZKPVerified;
 
-   
     address public aiMonitor;
-    address public hederaLogger;
     address public immutable PYUSD;
 
     uint256 public aiCooldown = 1 hours;
     uint256 public zkpValidityPeriod = 30 days;
 
-    
     event Locked(address indexed user, uint256 amount, uint256 period);
     event Unlocked(address indexed user, uint256 amount);
     event ActivityVerified(address indexed user, uint256 timestamp);
     event InactivityTransfer(address indexed user, address indexed nominee, uint256 amount);
-    event HederaLog(address indexed user, string logType, uint256 timestamp);
     event Ping(address indexed user, uint256 timestamp);
-
 
     modifier onlyAI() {
         require(msg.sender == aiMonitor, "Not AI monitor");
         _;
     }
 
- constructor(address _pyusd) Ownable(msg.sender) {
-    PYUSD = _pyusd;
-}
-
-
-    
-    function setMonitors(address _ai, address _hedera) external onlyOwner {
-        aiMonitor = _ai;
-        hederaLogger = _hedera;
+    constructor(address _pyusd) Ownable(msg.sender) {
+        PYUSD = _pyusd;
     }
 
-   
+    function setMonitors(address _ai) external onlyOwner {
+        aiMonitor = _ai;
+    }
+
     function pauseContract() external onlyOwner { _pause(); }
     function unpauseContract() external onlyOwner { _unpause(); }
 
-    
     function lockETH(
         uint256 _lockPeriod,
         Nominee[] calldata _nominees,
@@ -96,7 +84,6 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
         _lock(_amount, _lockPeriod, _nominees, _graceDays, _inactivityPeriod, PYUSD);
     }
 
-   
     function _lock(
         uint256 _amount,
         uint256 _lockPeriod,
@@ -130,7 +117,6 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
         info.active = true;
 
         emit Locked(msg.sender, _amount, _lockPeriod);
-        emit HederaLog(msg.sender, _token == address(0) ? "LOCK_CREATED_ETH" : "LOCK_CREATED_PYUSD", block.timestamp);
     }
 
     function ping() external whenNotPaused {
@@ -141,7 +127,6 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
         activityLog[msg.sender].push(block.timestamp);
 
         emit Ping(msg.sender, block.timestamp);
-        emit HederaLog(msg.sender, "PING", block.timestamp);
     }
 
     function verifyActivity(address user, bytes calldata zkpProof) external onlyAI whenNotPaused {
@@ -158,10 +143,8 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
         activityLog[user].push(block.timestamp);
 
         emit ActivityVerified(user, block.timestamp);
-        emit HederaLog(user, "ACTIVITY_VERIFIED", block.timestamp);
     }
 
-  
     function triggerInactivityTransfer(address user) external onlyAI nonReentrant whenNotPaused {
         LockInfo storage info = userLocks[user];
         require(info.active, "No active lock");
@@ -183,10 +166,7 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
 
             emit InactivityTransfer(user, info.nominees[i].wallet, shareAmt);
         }
-
-        emit HederaLog(user, "INACTIVITY_TRANSFER", block.timestamp);
     }
-
 
     function withdraw() external nonReentrant whenNotPaused {
         LockInfo storage info = userLocks[msg.sender];
@@ -205,7 +185,6 @@ contract PulseTrackCore is ReentrancyGuard, Ownable, Pausable {
         }
 
         emit Unlocked(msg.sender, amount);
-        emit HederaLog(msg.sender, "USER_WITHDRAW", block.timestamp);
     }
 
     function getActivityLog(address user) external view returns (uint256[] memory) {
