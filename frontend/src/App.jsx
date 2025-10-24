@@ -1,20 +1,22 @@
 import React, { useState } from "react";
 import WalletConnect from "./components/WalletConnect";
+import LockForm from "./components/LockForm";
 
 export default function App() {
   const [account, setAccount] = useState(null);
   const [balance, setBalance] = useState(0);
+  const [activeTab, setActiveTab] = useState("lock"); // Only Lock tab for now
 
-  // Shorten wallet address
   const shortAddress = (addr) =>
     addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center p-6">
       <h1 className="text-3xl font-bold text-indigo-400 mb-8">
-        🧠 PulseTrack Wallet
+        🧠 PulseTrack Guardian
       </h1>
 
+      {/* Wallet Connect */}
       <WalletConnect
         account={account}
         setAccount={setAccount}
@@ -22,20 +24,37 @@ export default function App() {
       />
 
       {account && (
-        <div className="bg-gray-900 p-6 rounded-2xl shadow-md mt-6 w-full max-w-sm text-center">
-          <p>
-            <span className="text-indigo-400">Wallet:</span>{" "}
-            {shortAddress(account)}
-          </p>
-          <p>
-            <span className="text-indigo-400">Balance:</span> {balance} ETH
-          </p>
-        </div>
+        <>
+          {/* Wallet Info */}
+          <div className="bg-gray-900 p-6 rounded-2xl shadow-md mt-6 w-full max-w-lg text-center space-y-2">
+            <p>
+              <span className="text-indigo-400">Wallet:</span> {shortAddress(account)}
+            </p>
+            <p>
+              <span className="text-indigo-400">Balance:</span> {balance} ETH
+            </p>
+          </div>
+
+          {/* Tabs - only Lock tab active */}
+          <div className="flex space-x-2 mt-6 mb-4 w-full max-w-lg">
+            <button
+              className="flex-1 py-2 rounded-xl bg-indigo-600 text-white font-semibold"
+              disabled
+            >
+              🔒 Lock Funds
+            </button>
+          </div>
+
+          {/* Active Section */}
+          <div className="w-full max-w-lg">
+            <LockForm account={account} />
+          </div>
+        </>
       )}
 
       {!account && (
         <p className="text-gray-400 mt-6 text-center">
-          Connect your wallet to access PulseTrack features.
+          Connect your wallet to lock ETH or PYUSD.
         </p>
       )}
     </div>
